@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coco le Singe 🐒</title>
+<style>
+:root{
+  --fur:#8b5a2b; --fur-dark:#5e3a1a; --skin:#f1c79b; --skin-dark:#dfa877;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  user-select:none;-webkit-user-select:none;touch-action:none;cursor:pointer;
+}
+
+/* ================= DÉCOR ================= */
+#scene{
+  position:relative;width:100%;height:100%;overflow:hidden;
+  background:linear-gradient(#6fcaff 0%,#bdeeff 55%,#e6ffd6 100%);
+}
+#night-sky{
+  position:absolute;inset:0;opacity:0;transition:opacity 1.8s;
+  background:linear-gradient(#070b2a 0%,#18245a 60%,#2b3c6e 100%);
+}
+body.night #night-sky{opacity:1}
+
+.sun,.moon{position:absolute;top:50px;right:110px;width:90px;height:90px;border-radius:50%;transition:transform 1.8s ease,opacity 1.8s}
+.sun{background:radial-gradient(#fff7b0,#ffd23f 70%);box-shadow:0 0 60px 10px #ffd23f99;animation:sunPulse 4s ease-in-out infinite}
+@keyframes sunPulse{50%{box-shadow:0 0 90px 25px #ffd23f88}}
+.moon{background:#f6f2d2;box-shadow:inset -18px -6px 0 #d9d3a6,0 0 50px #f6f2d277;opacity:0;transform:translateY(-260px)}
+body.night .sun{transform:translateY(500px);opacity:0}
+body.night .moon{transform:none;opacity:1}
+
+.star{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;opacity:0;transition:opacity 2s}
+body.night .star{opacity:var(--o);animation:twinkle var(--d) ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.15;transform:scale(.6)}}
+
+.cloud{position:absolute;left:0;width:150px;height:46px;background:#fff;border-radius:40px;opacity:.95;animation:drift linear infinite;transition:opacity 1.8s}
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:70px;height:70px;top:-35px;left:22px}
+.cloud::after{width:52px;height:52px;top:-24px;left:78px}
+body.night .cloud{opacity:.12}
+@keyframes drift{from{transform:translateX(-260px)}to{transform:translateX(calc(100vw + 260px))}}
+
+.hill{position:absolute;border-radius:50%;background:#7cc576;transition:filter 1.8s}
+.hill.h1{width:900px;height:400px;left:-200px;bottom:-180px}
+.hill.h2{width:1000px;height:440px;right:-300px;bottom:-200px;background:#6ab765}
+
+.tree{position:absolute;bottom:100px;width:240px;height:430px;z-index:2;transition:filter 1.8s}
+.trunk{position:absolute;bottom:0;left:50%;width:46px;height:300px;transform:translateX(-50%);
+  background:linear-gradient(90deg,#5d3f25,#8d6440 50%,#5d3f25);border-radius:14px 14px 4px 4px}
+.trunk::after{content:'';position:absolute;left:-40px;top:90px;width:60px;height:16px;background:#7a5535;border-radius:8px;transform:rotate(-30deg)}
+.canopy{position:absolute;top:0;left:0;width:240px;height:200px;cursor:crosshair;transform-origin:50% 100%;
+  background:
+    radial-gradient(circle at 28% 40%,#6cc070 0 30%,transparent 31%),
+    radial-gradient(circle at 72% 34%,#52b157 0 32%,transparent 33%),
+    radial-gradient(circle at 50% 62%,#3d9442 0 40%,transparent 41%),
+    radial-gradient(circle at 18% 70%,#47a44c 0 24%,transparent 25%),
+    radial-gradient(circle at 82% 70%,#2f8034 0 26%,transparent 27%);
+  animation:rustle 5s ease-in-out infinite}
+.canopy.shake{animation:canopyShake .4s}
+@keyframes rustle{50%{transform:rotate(1.5deg) scale(1.01)}}
+@keyframes canopyShake{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+.coco{position:absolute;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#9b7a6b,#4e342e);pointer-events:none}
+
+.vine{position:absolute;top:-10px;width:5px;z-index:3;border-radius:3px;
+  background:linear-gradient(#2e7d32,#5cb860);transform-origin:top center;animation:swing 4s ease-in-out infinite}
+.vine:hover{animation-duration:.7s!important}
+.vine .leaf{position:absolute;left:3px;width:18px;height:9px;background:#43a047;border-radius:0 100% 0 100%;transform:rotate(-20deg)}
+.vine .leaf.r{left:auto;right:3px;transform:scaleX(-1) rotate(-20deg)}
+@keyframes swing{0%,100%{transform:rotate(4deg)}50%{transform:rotate(-4deg)}}
+
+#ground{position:absolute;left:0;right:0;bottom:0;height:110px;z-index:3;
+  background:linear-gradient(#6abf4b,#3f8f2f);transition:filter 1.8s}
+#ground::before{content:'';position:absolute;top:-14px;left:0;right:0;height:16px;
+  background:radial-gradient(circle at 10px 16px,#6abf4b 10px,transparent 11px) 0 0/20px 16px repeat-x}
+body.night #ground,body.night .tree,body.night .hill{filter:brightness(.42) saturate(.8)}
+
+.firefly{position:absolute;width:5px;height:5px;border-radius:50%;background:#fffa9e;
+  box-shadow:0 0 10px 4px #fffa9e88;opacity:0;z-index:4;transition:opacity 2s;pointer-events:none}
+body.night .firefly{opacity:1;animation:fly var(--d) ease-in-out infinite alternate}
+@keyframes fly{to{transform:translate(var(--tx),var(--ty))}}
+
+/* ================= SINGE ================= */
+#monkeyWrap{position:absolute;bottom:80px;left:50%;width:220px;height:286px;margin-left:-110px;z-index:6}
+.flipper{width:100%;height:100%;transition:transform .25s}
+#monkey{width:100%;height:100%;transform-origin:50% 85%}
+#monkey svg{width:220px;height:286px;overflow:visible;display:block}
+body.night #monkey{filter:brightness(.8)}
+
+.shadow{position:absolute;left:50%;bottom:6px;width:120px;height:18px;margin-left:-60px;
+  border-radius:50%;background:rgba(0,0,0,.25);z-index:-1}
+#monkeyWrap:has(.jump) .shadow{animation:shadow .8s}
+#monkeyWrap:has(.flip) .shadow{animation:shadow 1s}
+@keyframes shadow{50%{transform:scale(.45);opacity:.4}}
+
+/* Couleurs */
+#monkey .fur{fill:var(--fur)}
+#monkey .furDark{fill:var(--fur-dark)}
+#monkey .skin{fill:var(--skin);transition:fill .3s}
+#monkey .skinDark{fill:var(--skin-dark);transition:fill .3s}
+#monkey .limb{fill:none;stroke:var(--fur);stroke-width:16;stroke-linecap:round}
+#monkey .tailPath{fill:none;stroke:var(--fur);stroke-width:10;stroke-linecap:round}
+#monkey .brow{fill:none;stroke:var(--fur-dark);stroke-width:3.2;stroke-linecap:round;transform-box:fill-box;transform-origin:center;transition:transform .2s}
+#monkey .m-smile,#monkey .m-frown{fill:none;stroke:#5a1e1e;stroke-width:3;stroke-linecap:round}
+#monkey .blush{fill:#ff8fa3;opacity:.45;transform-box:fill-box;transform-origin:center;transition:all .3s}
+
+/* Origines des pivots */
+#monkey .bodyAll{transform-origin:100px 250px;animation:breathe 3s ease-in-out infinite}
+#monkey .tail{transform-origin:132px 205px;animation:tail 2.4s ease-in-out infinite}
+#monkey .armL{transform-origin:66px 142px;animation:armIdleL 3s ease-in-out infinite;transition:transform .25s}
+#monkey .armR{transform-origin:134px 142px;animation:armIdleR 3s ease-in-out infinite;transition:transform .25s}
+#monkey .legL{transform-origin:82px 205px;transition:transform .2s}
+#monkey .legR{transform-origin:118px 205px;transition:transform .2s}
+#headFollow{transform-origin:100px 128px;transition:transform .2s ease-out}
+#monkey .head{transform-origin:100px 128px;transition:transform .4s}
+#pupils{transition:transform .08s}
+#monkey .lid{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0);transition:transform .08s}
+#monkey .ear{transform-box:fill-box}
+#monkey .earL{transform-origin:100% 50%}
+#monkey .earR{transform-origin:0% 50%}
+#monkey .m-open{transform-box:fill-box;transform-origin:center}
+#monkey .handBanana{display:none}
+
+@keyframes breathe{50%{transform:translateY(2px) scaleY(.985)}}
+@keyframes tail{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(14deg)}}
+@keyframes armIdleL{50%{transform:rotate(6deg)}}
+@keyframes armIdleR{50%{transform:rotate(-6deg)}}
+@keyframes earL{50%{transform:rotate(-20deg)}}
+@keyframes earR{50%{transform:rotate(20deg)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Oreilles qui bougent au survol */
+#monkeyWrap:hover .earL{animation:earL .3s 3}
+#monkeyWrap:hover .earR{animation:earR .3s 3}
+
+/* Bouches */
+#monkey .m-open,#monkey .m-frown{display:none}
+#monkey:is(.sad,.dizzy) .m-smile{display:none}
+#monkey:is(.sad,.dizzy) .m-frown{display:inline}
+#monkey:is(.tickle,.eat,.yawn,.dance,.jump,.flip,.angry,.poked) .m-smile,
+#monkey:is(.tickle,.eat,.yawn,.dance,.jump,.flip,.angry,.poked) .m-frown{display:none}
+#monkey:is(.tickle,.eat,.yawn,.dance,.jump,.flip,.angry,.poked) .m-open{display:inline}
+
+/* Clignement / sommeil */
+#monkey.blink .lid,#monkey.sleep .lid{transform:scaleY(1)}
+#monkey:is(.tickle,.yawn) .lid{transform:scaleY(.6)}
+
+/* MARCHE */
+#monkey.walk .legL{animation:stepA .36s ease-in-out infinite}
+#monkey.walk .legR{animation:stepB .36s ease-in-out infinite}
+#monkey.walk .armL{animation:stepB .36s ease-in-out infinite}
+#monkey.walk .armR{animation:stepA .36s ease-in-out infinite}
+#monkey.walk .bodyAll{animation:bob .18s ease-in-out infinite alternate}
+#monkey.walk .tail{animation:tail .7s ease-in-out infinite}
+@keyframes stepA{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-18deg)}}
+@keyframes stepB{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(18deg)}}
+@keyframes bob{to{transform:translateY(-5px)}}
+
+/* SAUT */
+#monkey.jump{animation:jump .8s cubic-bezier(.3,.7,.4,1)}
+@keyframes jump{
+  0%{transform:scale(1.1,.85)}15%{transform:scale(.9,1.1)}
+  50%{transform:translateY(-160px)}85%{transform:scale(1.1,.88)}100%{transform:none}}
+#monkey:is(.jump,.flip) .armL{animation:none;transform:rotate(130deg)}
+#monkey:is(.jump,.flip) .armR{animation:none;transform:rotate(-130deg)}
+#monkey:is(.jump,.flip) .legL{transform:rotate(28deg)}
+#monkey:is(.jump,.flip) .legR{transform:rotate(-28deg)}
+
+/* SALTO */
+#monkey.flip{animation:flip 1s cubic-bezier(.4,0,.3,1)}
+@keyframes flip{
+  0%{transform:none}20%{transform:translateY(8px) scale(1.1,.85)}
+  70%{transform:translateY(-190px) rotate(-360deg)}100%{transform:rotate(-360deg)}}
+
+/* DANSE */
+#monkey.dance{animation:danceBody .5s ease-in-out infinite}
+@keyframes danceBody{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg) translateY(-14px)}}
+#monkey.dance .armL{animation:waveL .5s ease-in-out infinite}
+#monkey.dance .armR{animation:waveR .5s ease-in-out infinite}
+#monkey.dance .legL{animation:stepA .5s ease-in-out infinite}
+#monkey.dance .legR{animation:stepB .5s ease-in-out infinite}
+#monkey.dance .tail{animation:spin .8s linear infinite}
+#monkey.dance .head{animation:headBop .5s ease-in-out infinite}
+@keyframes waveL{0%,100%{transform:rotate(120deg)}50%{transform:rotate(158deg)}}
+@keyframes waveR{0%,100%{transform:rotate(-158deg)}50%{transform:rotate(-120deg)}}
+@keyframes headBop{0%,100%{transform:rotate(8deg)}50%{transform:rotate(-8deg)}}
+
+/* CHATOUILLES */
+#monkey.tickle{animation:shake .12s linear infinite}
+#monkey.tickle .armL{animation:none;transform:rotate(-55deg)}
+#monkey.tickle .armR{animation:none;transform:rotate(55deg)}
+#monkey.tickle .legL{animation:stepA .22s infinite}
+#monkey.tickle .legR{animation:stepB .22s infinite}
+#monkey:is(.tickle,.eat) .blush{opacity:.9;transform:scale(1.5)}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-5px) rotate(-3deg)}75%{transform:translateX(5px) rotate(3deg)}}
+
+/* COLÈRE */
+#monkey.angry{animation:shake .08s linear infinite}
+#monkey.angry .skin{fill:#ff9480}
+#monkey.angry .skinDark{fill:#e0705c}
+#monkey.angry .browL{transform:rotate(24deg) translateY(3px)}
+#monkey.angry .browR{transform:rotate(-24deg) translateY(3px)}
+#monkey.angry .armL{animation:fistL .2s ease-in-out infinite}
+#monkey.angry .armR{animation:fistR .2s ease-in-out infinite}
+@keyframes fistL{0%,100%{transform:rotate(120deg)}50%{transform:rotate(145deg)}}
+@keyframes fistR{0%,100%{transform:rotate(-120deg)}50%{transform:rotate(-145deg)}}
+
+/* TAPE SUR LA TÊTE */
+#monkey.poked .head{animation:squash .45s}
+@keyframes squash{30%{transform:scale(1.12,.85)}60%{transform:scale(.95,1.06)}}
+
+/* MANGER */
+#monkey.eat .armR{animation:munch .5s ease-in-out infinite}
+#monkey.eat .handBanana{display:inline}
+#monkey.eat .m-open{animation:chew .25s infinite}
+@keyframes munch{0%,100%{transform:rotate(130deg)}50%{transform:rotate(140deg)}}
+@keyframes chew{50%{transform:scaleY(.35)}}
+
+/* BÂILLEMENT / DODO */
+#monkey.yawn .m-open{transform:scale(1.3,1.8)}
+#monkey.yawn .armL{animation:none;transform:rotate(140deg)}
+#monkey.yawn .armR{animation:none;transform:rotate(-140deg)}
+#monkey.sleep .head{transform:rotate(12deg) translateY(5px)}
+#monkey.sleep .bodyAll{animation-duration:4.5s}
+#monkey.sleep .tail{animation-duration:7s}
+
+/* PETITES ACTIONS */
+#monkey.wave .armR{animation:wave .4s ease-in-out infinite}
+@keyframes wave{0%,100%{transform:rotate(-150deg)}50%{transform:rotate(-112deg)}}
+#monkey.scratch .armL{animation:scratch .22s ease-in-out infinite}
+#monkey.scratch .head{transform:rotate(-8deg)}
+@keyframes scratch{0%,100%{transform:rotate(148deg)}50%{transform:rotate(165deg)}}
+#monkey.look .head{animation:look 1.7s ease-in-out}
+@keyframes look{25%{transform:rotate(-15deg)}75%{transform:rotate(15deg)}}
+#monkey.earwiggle .earL{animation:earL .2s 6}
+#monkey.earwiggle .earR{animation:earR .2s 6}
+#monkey.tailspin .tail{animation:spin .45s linear 3}
+
+/* SONNÉ */
+#monkey.dizzy .head{animation:wobble .5s ease-in-out infinite}
+#monkey.dizzy{animation:sway 1s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(-12deg)}50%{transform:rotate(12deg)}}
+@keyframes sway{50%{transform:rotate(4deg) translateX(6px)}}
+
+/* TRISTE */
+#monkey.sad .head{transform:translateY(5px) rotate(-4deg)}
+#monkey.sad .browL{transform:rotate(-16deg)}
+#monkey.sad .browR{transform:rotate(16deg)}
+#monkey.sad .tail{animation-duration:6s}
+
+/* Bulle */
+#bubble{position:absolute;left:50%;bottom:100%;margin-bottom:-6px;z-index:10;
+  transform:translateX(-50%) scale(0);transform-origin:50% 100%;
+  background:#fff;color:#3b2a1a;padding:10px 16px;border-radius:18px;font-weight:700;font-size:18px;
+  white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.18);
+  transition:transform .25s cubic-bezier(.3,1.6,.5,1);pointer-events:none}
+#bubble::after{content:'';position:absolute;top:100%;left:50%;margin-left:-8px;border:8px solid transparent;border-top-color:#fff}
+#bubble.show{transform:translateX(-50%) scale(1)}
+
+/* Objets & particules */
+.banana,.coconut{position:absolute;font-size:36px;line-height:1;z-index:5;pointer-events:none;
+  filter:drop-shadow(0 4px 2px rgba(0,0,0,.3))}
+.banana.landed{animation:bananaWobble 1.4s ease-in-out infinite}
+@keyframes bananaWobble{50%{transform:rotate(12deg) translateY(-3px)}}
+.peel{position:absolute;font-size:30px;z-index:20;pointer-events:none;filter:sepia(1) brightness(.75)}
+.falling-leaf{position:absolute;top:-30px;font-size:22px;z-index:4;pointer-events:none}
+.particle{position:absolute;z-index:20;pointer-events:none;font-size:26px;font-weight:900;
+  transform:translate(-50%,-50%);animation:floatUp 1.4s ease-out forwards}
+.particle.ha{color:#ff4081;font-family:'Comic Sans MS','Chalkboard SE',cursive;text-shadow:2px 2px 0 #fff}
+.particle.z{color:#dfe8ff;font-family:'Comic Sans MS',cursive;text-shadow:0 0 8px #8ab}
+@keyframes floatUp{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}
+  15%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% - 120px)) scale(.9) rotate(var(--rot))}}
+
+/* ================= INTERFACE ================= */
+.ui{position:absolute;z-index:30;cursor:default}
+.panel{top:16px;left:16px;width:240px;padding:16px;border-radius:20px;
+  background:rgba(255,255,255,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 8px 30px rgba(0,0,0,.15);color:#3b2a1a}
+body.night .panel{background:rgba(20,28,60,.7);color:#eef}
+.panel h1{font-size:22px;margin-bottom:10px}
+.stat{display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin:6px 0}
+.bar{height:12px;border-radius:8px;background:rgba(0,0,0,.12);overflow:hidden}
+#happyBar{height:100%;width:70%;border-radius:8px;transition:width .4s,background .4s}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.buttons button{border:none;border-radius:12px;padding:9px 6px;font-size:14px;font-weight:700;cursor:pointer;
+  background:#ffcf4a;color:#3b2a1a;box-shadow:0 3px 0 #d9a520;transition:transform .1s}
+.buttons button:hover{transform:translateY(-2px)}
+.buttons button:active{transform:translateY(2px);box-shadow:0 1px 0 #d9a520}
+.help{left:0;right:0;bottom:10px;text-align:center;font-size:13px;color:#fff;font-weight:600;
+  text-shadow:0 1px 3px rgba(0,0,0,.5);pointer-events:none;padding:0 10px}
+@media (max-width:700px){
+  .tree.right{display:none}
+  .panel{width:190px;padding:12px}
+  .buttons button{font-size:12px}
+  .help{font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<div id="scene">
+  <div id="night-sky"></div>
+  <div class="sun"></div>
+  <div class="moon"></div>
+  <div class="cloud" style="top:80px;animation-duration:55s;animation-delay:-10s"></div>
+  <div class="cloud" style="top:150px;animation-duration:75s;animation-delay:-40s;scale:.7"></div>
+  <div class="cloud" style="top:40px;animation-duration:65s;animation-delay:-25s;scale:.85"></div>
+  <div class="hill h1"></div>
+  <div class="hill h2"></div>
+
+  <div class="tree" style="left:2%">
+    <div class="trunk"></div>
+    <div class="canopy">
+      <span class="coco" style="left:42%;top:72%"></span>
+      <span class="coco" style="left:52%;top:76%"></span>
+      <span class="coco" style="left:47%;top:66%"></span>
+    </div>
+  </div>
+  <div class="tree right" style="right:3%">
+    <div class="trunk"></div>
+    <div class="canopy">
+      <span class="coco" style="left:38%;top:70%"></span>
+      <span class="coco" style="left:50%;top:75%"></span>
+    </div>
+  </div>
+
+  <div id="ground"></div>
+
+  <!-- LE SINGE -->
+  <div id="monkeyWrap">
+    <div id="bubble"></div>
+    <div class="flipper">
+      <div id="monkey">
+        <svg viewBox="0 0 200 260" aria-label="Singe">
+          <g class="bodyAll">
+            <!-- Queue -->
+            <g class="tail" id="tail">
+              <path class="tailPath" d="M132 205 C 185 215, 205 160, 178 125 C 162 105, 182 82, 194 98"/>
+              <path d="M132 205 C 185 215, 205 160, 178 125 C 162 105, 182 82, 194 98" fill="none" stroke="transparent" stroke-width="28"/>
+            </g>
+            <!-- Jambes -->
+            <g class="legL"><path class="limb" d="M82 205 Q74 228 76 243"/><ellipse class="skin" cx="72" cy="247" rx="13" ry="7"/></g>
+            <g class="legR"><path class="limb" d="M118 205 Q126 228 124 243"/><ellipse class="skin" cx="128" cy="247" rx="13" ry="7"/></g>
+            <!-- Corps -->
+            <ellipse class="fur" cx="100" cy="172" rx="45" ry="50"/>
+            <ellipse id="belly" class="skin" cx="100" cy="180" rx="29" ry="34"/>
+            <path d="M100 160 q3 5 0 9" fill="none" stroke="#c9946a" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Tête -->
+            <g id="headFollow"><g class="head" id="headGroup">
+              <g class="ear earL"><circle class="fur" cx="52" cy="86" r="20"/><circle class="skin" cx="52" cy="86" r="11"/></g>
+              <g class="ear earR"><circle class="fur" cx="148" cy="86" r="20"/><circle class="skin" cx="148" cy="86" r="11"/></g>
+              <circle id="headCircle" class="fur" cx="100" cy="80" r="48"/>
+              <path class="furDark" d="M86 38 Q94 12 102 34 Q110 14 116 40 Z"/>
+              <circle class="skin" cx="83" cy="78" r="20"/>
+              <circle class="skin" cx="117" cy="78" r="20"/>
+              <ellipse class="skin" cx="100" cy="104" rx="32" ry="22"/>
+              <ellipse class="blush" cx="71" cy="102" rx="7" ry="4"/>
+              <ellipse class="blush" cx="129" cy="102" rx="7" ry="4"/>
+              <ellipse cx="84" cy="78" rx="9" ry="10" fill="#fff"/>
+              <ellipse cx="116" cy="78" rx="9" ry="10" fill="#fff"/>
+              <g id="pupils">
+                <circle cx="84" cy="79" r="5" fill="#2b1a0e"/><circle cx="116" cy="79" r="5" fill="#2b1a0e"/>
+                <circle cx="86" cy="76.5" r="1.8" fill="#fff"/><circle cx="118" cy="76.5" r="1.8" fill="#fff"/>
+              </g>
+              <ellipse class="lid skinDark" cx="84" cy="78" rx="10.5" ry="11"/>
+              <ellipse class="lid skinDark" cx="116" cy="78" rx="10.5" ry="11"/>
+              <path class="brow browL" d="M74 63 Q84 57 93 63"/>
+              <path class="brow browR" d="M107 63 Q116 57 126 63"/>
+              <ellipse cx="95" cy="97" rx="2.2" ry="1.6" fill="#5a3a22"/>
+              <ellipse cx="105" cy="97" rx="2.2" ry="1.6" fill="#5a3a22"/>
+              <path class="m-smile" d="M86 107 Q100 121 114 107"/>
+              <path class="m-frown" d="M88 116 Q100 106 112 116"/>
+              <g class="m-open">
+                <ellipse cx="100" cy="113" rx="11" ry="9" fill="#5a1e1e"/>
+                <ellipse cx="100" cy="118" rx="6" ry="3.5" fill="#ff7b8a"/>
+              </g>
+            </g></g>
+
+            <!-- Bras (devant la tête pour pouvoir manger) -->
+            <g class="armL"><path class="limb" d="M66 142 Q42 172 48 203"/><circle class="skin" cx="48" cy="207" r="10"/></g>
+            <g class="armR">
+              <path class="limb" d="M134 142 Q158 172 152 203"/><circle class="skin" cx="152" cy="207" r="10"/>
+              <text class="handBanana" x="138" y="228" font-size="26">🍌</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="shadow"></div>
+  </div>
+</div>
+
+<!-- INTERFACE -->
+<div class="ui panel">
+  <h1>🐒 Coco</h1>
+  <div class="stat"><span>Bonheur</span><span id="moodEmoji">😊</span></div>
+  <div class="bar"><div id="happyBar"></div></div>
+  <div class="stat"><span>🍌 Bananes mangées</span><b id="eaten">0</b></div>
+  <div class="buttons">
+    <button data-a="feed">🍌 Nourrir</button>
+    <button data-a="dance">💃 Danser</button>
+    <button data-a="jump">🦘 Sauter</button>
+    <button data-a="flip">🤸 Salto</button>
+    <button data-a="night" id="nightBtn">🌙 Nuit</button>
+    <button data-a="sound" id="soundBtn">🔊 Son</button>
+  </div>
+</div>
+<div class="ui help">
+  Clique dans le décor = banane 🍌 • Frotte son ventre = chatouilles • Tape sa tête (5× = colère 😡) • Clique sa queue •
+  Clique un arbre = noix de coco 🥥 • Double-clic = salto • ← → pour bouger, Espace = saut, D = danse
+</div>
+
+<script>
+/* ===================== RÉFÉRENCES ===================== */
+const scene = document.getElementById('scene');
+const wrap = document.getElementById('monkeyWrap');
+const flipper = wrap.querySelector('.flipper');
+const monkey = document.getElementById('monkey');
+const bubble = document.getElementById('bubble');
+const headEl = document.getElementById('headCircle');
+const headFollow = document.getElementById('headFollow');
+const pupils = document.getElementById('pupils');
+const belly = document.getElementById('belly');
+const bar = document.getElementById('happyBar');
+const moodEl = document.getElementById('moodEmoji');
+const eatenEl = document.getElementById('eaten');
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const now = () => performance.now();
+
+/* ===================== ÉTAT ===================== */
+let x = innerWidth / 2, targetX = null, facing = -1;
+let happiness = 70, eaten = 0;
+let busyUntil = 0, sleeping = false, night = false, soundOn = true;
+let lastAct = Date.now();
+let mx = innerWidth / 2, my = innerHeight / 2;
+const bananas = [], keys = {}, timers = {};
+const EXCL = ['jump','flip','dance','tickle','angry','dizzy','eat','yawn','poked','wave','scratch','look','earwiggle','tailspin'];
+
+const isBusy = () => now() < busyUntil;
+const happy = d => happiness = clamp(happiness + d, 0, 100);
+
+function act(cls, ms) {
+  EXCL.forEach(c => { if (c !== cls) { monkey.classList.remove(c); clearTimeout(timers[c]); } });
+  if (cls !== 'dance') stopMusic();
+  clearTimeout(timers[cls]);
+  monkey.classList.remove(cls);
+  void monkey.offsetWidth;            // relance l'animation
+  monkey.classList.add(cls);
+  busyUntil = now() + ms;
+  timers[cls] = setTimeout(() => monkey.classList.remove(cls), ms);
+}
+
+let sayTimer;
+function say(text, ms = 1800) {
+  bubble.textContent = text;
+  bubble.classList.add('show');
+  clearTimeout(sayTimer);
+  sayTimer = setTimeout(() => bubble.classList.remove('show'), ms);
+}
+
+function headPos() {
+  const r = headEl.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2, top: r.top };
+}
+
+function particle(txt, px, py, cls = '') {
+  const p = document.createElement('div');
+  p.className = 'particle ' + cls;
+  p.textContent = txt;
+  p.style.left = px + 'px';
+  p.style.top = py + 'px';
+  p.style.setProperty('--dx', rand(-50, 50) + 'px');
+  p.style.setProperty('--rot', rand(-40, 40) + 'deg');
+  scene.appendChild(p);
+  setTimeout(() => p.remove(), 1500);
+}
+
+/* ===================== SONS (générés, aucun fichier) ===================== */
+let actx;
+function tone(f1, f2, dur, type = 'sine', vol = .15, delay = 0) {
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const t = actx.currentTime + delay;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.05);
+  } catch (e) {}
+}
+const sfx = {
+  ouh()   { [0,.17,.34,.48].forEach((d,i) => tone(i<2?320:520, i<2?520:850, .15, 'triangle', .18, d)); },
+  boing() { tone(200, 650, .25, 'square', .07); },
+  laugh() { for (let i=0;i<6;i++) tone(760, 520, .09, 'triangle', .15, i*.11); },
+  eat()   { for (let i=0;i<5;i++) tone(160, 90, .08, 'square', .06, i*.25); },
+  bonk()  { tone(130, 40, .3, 'sine', .45); tone(1300, 800, .5, 'triangle', .05, .12); },
+  angry() { tone(160, 90, .6, 'sawtooth', .1); tone(170, 95, .6, 'sawtooth', .06, .05); },
+  snore() { tone(90, 60, .9, 'sawtooth', .025); },
+  whoosh(){ tone(300, 1400, .3, 'sine', .08); },
+  plop()  { tone(500, 250, .12, 'triangle', .08); },
+  yawn()  { tone(380, 160, 1.2, 'sine', .08); }
+};
+
+let danceTimer = null;
+function stopMusic() { clearInterval(danceTimer); danceTimer = null; }
+
+/* ===================== ACTIONS ===================== */
+function wake(msg) {
+  if (!sleeping) return;
+  sleeping = false;
+  monkey.classList.remove('sleep');
+  lastAct = Date.now();
+  act('jump', 800);
+  sfx.ouh();
+  say(msg || 'Hein ?! 😳', 2000);
+}
+
+function goSleep() {
+  if (sleeping) return;
+  act('yawn', 1600);
+  say('Aaaaah... 🥱', 1600);
+  sfx.yawn();
+  setTimeout(() => {
+    if (now() >= busyUntil - 80 && !sleeping) {
+      sleeping = true;
+      monkey.classList.add('sleep');
+      say('Zzz... 😴', 1500);
+    }
+  }, 1600);
+}
+
+function doJump(line = true) {
+  if (sleeping) return wake('Hein ?! Qui est là ?');
+  act('jump', 800);
+  sfx.ouh();
+  if (line) say(pick(['Ouh ouh ah ah ! 🐒', 'Hop !', 'Youpiii !', 'Boing boing !']));
+  happy(2);
+}
+
+function doFlip() {
+  if (sleeping) return wake('Hein ?!');
+  act('flip', 1000);
+  sfx.whoosh();
+  say(pick(['Salto ! 🤸', 'Tadaaa ! ✨', 'Trop fort hein ?']));
+  happy(4);
+  setTimeout(() => {
+    const r = wrap.getBoundingClientRect();
+    for (let i = 0; i < 3; i++) particle('✨', r.left + r.width/2 + rand(-60, 60), r.bottom - 30);
+  }, 950);
+}
+
+function doDance() {
+  if (sleeping) { sleeping = false; monkey.classList.remove('sleep'); }
+  act('dance', 6000);
+  say("C'est la fête ! 🎶", 2500);
+  happy(8);
+  stopMusic();
+  let beat = 0;
+  const notes = [523, 659, 784, 659, 880, 784, 659, 587];
+  danceTimer = setInterval(() => {
+    tone(160, 45, .15, 'sine', .35);
+    if (beat % 2) tone(7000, 5000, .04, 'square', .015);
+    tone(notes[beat % 8], notes[beat % 8] * 1.01, .18, 'triangle', .07);
+    if (beat % 2 === 0) { const h = headPos(); particle(pick(['🎵','🎶']), h.x + rand(-90, 90), h.y - 40); }
+    if (++beat >= 24) stopMusic();
+  }, 250);
+}
+
+function tickle() {
+  if (sleeping) return wake('Hihi... quoi ? 😆');
+  act('tickle', 1700);
+  sfx.laugh();
+  say(pick(['Hihihi ! 🤣', 'Ha ha ha ! Arrête !', 'Ça chatouille ! 😆', 'Hiii pas le ventre !']), 1600);
+  happy(6);
+  const h = headPos();
+  for (let i = 0; i < 6; i++)
+    setTimeout(() => particle(pick(['ha', 'HA', 'hi', '😂']), h.x + rand(-90, 90), h.y + rand(-20, 40), 'ha'), i * 170);
+}
+
+let pokes = [];
+function poke() {
+  if (sleeping) { happy(-3); return wake('Hein ?! Je dormais... 😠'); }
+  const t = now();
+  pokes = pokes.filter(p => t - p < 3000);
+  pokes.push(t);
+  if (pokes.length >= 5) {
+    pokes = [];
+    act('angry', 2600);
+    say('ARRÊTE ÇA ! 😡', 2400);
+    sfx.angry();
+    happy(-12);
+    const h = headPos();
+    for (let i = 0; i < 6; i++) setTimeout(() => particle('💢', h.x + rand(-60, 60), h.y - rand(10, 60)), i * 180);
+    return;
+  }
+  act('poked', 450);
+  sfx.boing();
+  say(['Hé !', 'Aïe ! 😕', 'Ça suffit ! 😠', 'Dernier avertissement ! 😤'][pokes.length - 1]);
+}
+
+function tailClick() {
+  if (sleeping) return wake('Ma queue ?! 😳');
+  act('tailspin', 1400);
+  sfx.whoosh();
+  say(pick(['Pas touche à ma queue ! 🙈', 'Wiiiii !', 'Hé, c\'est ma queue !']));
+}
+
+function bonk() {
+  if (sleeping) { sleeping = false; monkey.classList.remove('sleep'); }
+  act('dizzy', 2800);
+  sfx.bonk();
+  say('AÏE ! Ma tête... 💫', 2500);
+  happy(-8);
+  const h = headPos();
+  for (let i = 0; i < 7; i++) setTimeout(() => particle(pick(['⭐', '💫', '✨']), h.x + rand(-60, 60), h.y - rand(30, 60)), i * 150);
+}
+
+function eat(b) {
+  bananas.splice(bananas.indexOf(b), 1);
+  b.el.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(.2) translateY(-60px)' }], { duration: 300 })
+      .onfinish = () => b.el.remove();
+  act('eat', 2300);
+  sfx.eat();
+  say(pick(['Miam miam ! 😋', 'Délicieux ! 🍌', 'Encore ! Encore !', 'Mmmh la banane !']), 2000);
+  happy(14);
+  eaten++;
+  const h = headPos();
+  for (let i = 0; i < 4; i++) setTimeout(() => particle(pick(['❤️', '💛', '✨']), h.x + rand(-50, 50), h.y - 20), i * 300);
+  // il jette la peau
+  setTimeout(() => {
+    const p = document.createElement('div');
+    p.className = 'peel'; p.textContent = '🍌';
+    const h2 = headPos();
+    p.style.left = h2.x + 'px'; p.style.top = h2.y + 'px';
+    scene.appendChild(p);
+    const dir = pick([-1, 1]);
+    p.animate([
+      { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+      { transform: `translate(${dir*220}px,-180px) rotate(${dir*540}deg)`, opacity: 1, offset: .5 },
+      { transform: `translate(${dir*380}px,${innerHeight - h2.y - 120}px) rotate(${dir*900}deg)`, opacity: 0 }
+    ], { duration: 1300, easing: 'ease-out' }).onfinish = () => p.remove();
+    sfx.whoosh();
+  }, 2200);
+}
+
+function fall(el, left, y0, yEnd, spin, onLand) {
+  const dur = 300 + Math.sqrt(Math.max(0, yEnd - y0)) * 28;
+  el.style.left = left + 'px';
+  el.style.top = yEnd + 'px';
+  el.animate([
+    { transform: `translateY(${y0 - yEnd}px) rotate(0deg)` },
+    { transform: `translateY(0) rotate(${spin}deg)` }
+  ], { duration: dur, easing: 'cubic-bezier(.55,0,1,.45)' }).onfinish = onLand;
+}
+
+function dropBanana(cx, cy) {
+  if (bananas.length >= 8) return say('Trop de bananes ! 😵');
+  cx = clamp(cx, 100, innerWidth - 100);
+  const el = document.createElement('div');
+  el.className = 'banana'; el.textContent = '🍌';
+  scene.appendChild(el);
+  const b = { el, x: cx, landed: false };
+  bananas.push(b);
+  const yEnd = innerHeight - 136;
+  fall(el, cx - 18, Math.min(cy - 18, yEnd), yEnd, 720, () => {
+    el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-18px)' }, { transform: 'translateY(0)' }], { duration: 300 });
+    b.landed = true;
+    el.classList.add('landed');
+    sfx.plop();
+    if (sleeping) setTimeout(() => wake('Une banane ?! 😍'), 500);
+    else if (!isBusy() && Math.random() < .5) say(pick(['Ooh ! Une banane ! 🍌', 'À moi !', 'Banane en vue ! 👀']));
+  });
+}
+
+function dropCoconut(cx, cy, canopy) {
+  canopy.classList.remove('shake'); void canopy.offsetWidth; canopy.classList.add('shake');
+  const el = document.createElement('div');
+  el.className = 'coconut'; el.textContent = '🥥';
+  scene.appendChild(el);
+  const h = headPos();
+  const aimHead = Math.abs(cx - h.x) < 60;
+  const groundY = innerHeight - 134;
+  const yEnd = aimHead ? h.top - 30 : groundY;
+  fall(el, cx - 18, cy - 18, yEnd, 360, () => {
+    const h2 = headPos();
+    const airborne = monkey.classList.contains('jump') || monkey.classList.contains('flip');
+    const hit = aimHead && Math.abs(cx - h2.x) < 80 && !airborne;
+    if (hit) bonk(); else { tone(120, 60, .2, 'sine', .3); if (!isBusy() && !sleeping && Math.random() < .4) say('Ouh ! Une noix de coco ! 🥥'); }
+    const dir = cx < x ? -1 : 1;
+    const dy = groundY - yEnd;
+    el.animate([
+      { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+      { transform: `translate(${dir*120}px,${dy - 60}px) rotate(${dir*300}deg)`, opacity: 1, offset: .4 },
+      { transform: `translate(${dir*320}px,${dy}px) rotate(${dir*720}deg)`, opacity: 0 }
+    ], { duration: 1400, easing: 'ease-out' }).onfinish = () => el.remove();
+  });
+}
+
+function feed() { dropBanana(x + rand(-250, 250), 40); }
+
+function idle() {
+  if (Math.random() < .3) { targetX = rand(130, innerWidth - 130); return; }
+  const [c, line] = pick([
+    ['wave', 'Coucou ! 👋'], ['scratch', 'Hmm... 🤔'], ['look', null], ['look', "Y'a quelqu'un ?"],
+    ['earwiggle', null], ['tailspin', 'Wiii !']
+  ]);
+  act(c, 1700);
+  if (line) say(line, 1500);
+  if (c === 'scratch') { const h = headPos(); particle('❓', h.x, h.y - 60); }
+}
+
+function toggleNight() {
+  night = !night;
+  document.body.classList.toggle('night', night);
+  document.getElementById('nightBtn').textContent = night ? '☀️ Jour' : '🌙 Nuit';
+  if (night) { say('Il commence à faire noir... 🌙'); setTimeout(() => { if (night) goSleep(); }, 2000); }
+  else if (sleeping) wake('Bonjour soleil ! ☀️');
+  else say('Bonjour soleil ! ☀️');
+}
+
+/* ===================== ÉVÉNEMENTS ===================== */
+scene.addEventListener('pointerdown', e => {
+  lastAct = Date.now();
+  const t = e.target;
+  if (t.closest('#belly')) return tickle();
+  if (t.closest('#tail')) return tailClick();
+  if (t.closest('#headGroup')) return poke();
+  if (t.closest('#monkey')) return doJump();
+  const can = t.closest('.canopy');
+  if (can) return dropCoconut(e.clientX, e.clientY, can);
+  dropBanana(e.clientX, e.clientY);
+});
+scene.addEventListener('dblclick', e => { if (e.target.closest('#monkey')) doFlip(); });
+
+addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; });
+
+// frotter le ventre = chatouilles
+let rub = 0, lastRub = null;
+belly.addEventListener('pointermove', e => {
+  if (lastRub) rub += Math.hypot(e.clientX - lastRub.x, e.clientY - lastRub.y);
+  lastRub = { x: e.clientX, y: e.clientY };
+  if (rub > 350 && !isBusy()) { rub = 0; tickle(); }
+});
+belly.addEventListener('pointerleave', () => { lastRub = null; rub = 0; });
+
+const actions = {
+  feed, dance: doDance, jump: () => doJump(), flip: doFlip, night: toggleNight,
+  sound() { soundOn = !soundOn; document.getElementById('soundBtn').textContent = soundOn ? '🔊 Son' : '🔇 Muet'; }
+};
+document.querySelectorAll('[data-a]').forEach(b =>
+  b.addEventListener('click', () => { lastAct = Date.now(); actions[b.dataset.a](); }));
+
+addEventListener('keydown', e => {
+  lastAct = Date.now();
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+    keys[e.code] = true;
+    if (sleeping) wake('Hein ? On bouge ?');
+  }
+  if (e.repeat) return;
+  if (e.code === 'Space') { e.preventDefault(); doJump(); }
+  if (e.key === 'd' || e.key === 'D') doDance();
+  if (e.key === 'f' || e.key === 'F') doFlip();
+  if (e.key === 'b' || e.key === 'B') feed();
+  if (e.key === 'n' || e.key === 'N') toggleNight();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+/* ===================== BOUCLE PRINCIPALE ===================== */
+let lastT = now(), frame = 0;
+function loop(t) {
+  const dt = Math.min(3, (t - lastT) / 16.67);
+  lastT = t;
+  const busy = isBusy();
+  const airborne = monkey.classList.contains('jump') || monkey.classList.contains('flip');
+  let walking = false;
+
+  if (!sleeping && (!busy || airborne) && (keys.ArrowLeft || keys.ArrowRight)) {
+    const d = keys.ArrowLeft ? -1 : 1;
+    x += d * 5 * dt; facing = d; walking = !airborne; targetX = null;
+  } else if (!sleeping && !busy) {
+    const landed = bananas.filter(b => b.landed);
+    if (landed.length) {
+      landed.sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x));
+      targetX = landed[0].x;
+    }
+    if (targetX !== null) {
+      targetX = clamp(targetX, 100, innerWidth - 100);
+      const d = targetX - x;
+      if (Math.abs(d) > 6) {
+        x += Math.sign(d) * Math.min(3.4 * dt, Math.abs(d));
+        facing = Math.sign(d); walking = true;
+      } else targetX = null;
+    }
+    const nb = bananas.find(b => b.landed && Math.abs(b.x - x) < 40);
+    if (nb && !walking) eat(nb);
+  }
+
+  x = clamp(x, 100, innerWidth - 100);
+  wrap.style.left = x + 'px';
+  flipper.style.transform = `scaleX(${-facing})`;
+  monkey.classList.toggle('walk', walking);
+
+  // les yeux et la tête suivent la souris
+  const h = headPos();
+  const s = -facing;
+  const dx = mx - h.x, dy = my - h.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const k = Math.min(1, dist / 120);
+  pupils.style.transform = `translate(${dx / dist * 4 * k * s}px, ${dy / dist * 4 * k}px)`;
+  headFollow.style.transform = `rotate(${sleeping ? 0 : clamp(dx * s / 30, -12, 12)}deg)`;
+
+  if (++frame % 6 === 0) {
+    happiness = Math.max(0, happiness - 0.02);
+    bar.style.width = happiness + '%';
+    bar.style.background = `hsl(${happiness * 1.2}, 80%, 50%)`;
+    moodEl.textContent = sleeping ? '😴' : happiness > 80 ? '😄' : happiness > 55 ? '😊' : happiness > 30 ? '😐' : '😢';
+    eatenEl.textContent = eaten;
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ===================== CERVEAU (actions automatiques) ===================== */
+setInterval(() => {
+  if (sleeping) {
+    const h = headPos();
+    particle(pick(['z', 'Z', 'z']), h.x + rand(20, 50), h.y - 40, 'z');
+    if (Math.random() < .35) sfx.snore();
+    return;
+  }
+  monkey.classList.toggle('sad', happiness < 25);
+  if (isBusy() || targetX !== null || bananas.some(b => b.landed)) return;
+  const idleFor = Date.now() - lastAct;
+  if (idleFor > (night ? 7000 : 30000)) return goSleep();
+  if (happiness < 25 && Math.random() < .15) return say(pick(["J'ai faim... 🍌", 'Une petite banane ? 🥺']));
+  if (happiness > 85 && Math.random() < .06) { doJump(false); return say('Je suis trop content ! 🥰'); }
+  if (Math.random() < .2) idle();
+}, 1000);
+
+// clignement des yeux
+(function blink() {
+  setTimeout(() => {
+    if (!sleeping) {
+      monkey.classList.add('blink');
+      setTimeout(() => monkey.classList.remove('blink'), 130);
+      if (Math.random() < .25) setTimeout(() => {
+        monkey.classList.add('blink');
+        setTimeout(() => monkey.classList.remove('blink'), 120);
+      }, 260);
+    }
+    blink();
+  }, rand(1800, 4500));
+})();
+
+/* ===================== DÉCOR GÉNÉRÉ ===================== */
+for (let i = 0; i < 70; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  s.style.left = rand(0, 100) + '%';
+  s.style.top = rand(0, 55) + '%';
+  s.style.setProperty('--o', rand(.4, 1));
+  s.style.setProperty('--d', rand(1.5, 4) + 's');
+  scene.insertBefore(s, scene.children[1]);
+}
+for (let i = 0; i < 16; i++) {
+  const f = document.createElement('div');
+  f.className = 'firefly';
+  f.style.left = rand(5, 95) + '%';
+  f.style.top = rand(45, 85) + '%';
+  f.style.setProperty('--tx', rand(-80, 80) + 'px');
+  f.style.setProperty('--ty', rand(-60, 60) + 'px');
+  f.style.setProperty('--d', rand(2, 5) + 's');
+  scene.appendChild(f);
+}
+for (let i = 0; i < 7; i++) {
+  const v = document.createElement('div');
+  v.className = 'vine';
+  v.style.left = (8 + i * 13 + rand(0, 6)) + '%';
+  const hgt = rand(80, 240);
+  v.style.height = hgt + 'px';
+  v.style.animationDuration = rand(3, 6) + 's';
+  v.style.animationDelay = -rand(0, 3) + 's';
+  for (let y = 20, n = 0; y < hgt; y += 26, n++) {
+    const l = document.createElement('span');
+    l.className = 'leaf' + (n % 2 ? ' r' : '');
+    l.style.top = y + 'px';
+    v.appendChild(l);
+  }
+  scene.appendChild(v);
+}
+// feuilles qui tombent
+setInterval(() => {
+  const l = document.createElement('div');
+  l.className = 'falling-leaf';
+  l.textContent = pick(['🍃', '🍂', '🌿']);
+  l.style.left = rand(0, innerWidth) + 'px';
+  scene.appendChild(l);
+  const sway = rand(-150, 150);
+  l.animate([
+    { transform: 'translate(0,0) rotate(0)' },
+    { transform: `translate(${sway}px,${innerHeight * .5}px) rotate(200deg)`, offset: .5 },
+    { transform: `translate(${-sway / 2}px,${innerHeight}px) rotate(420deg)`, opacity: .2 }
+  ], { duration: rand(6000, 10000), easing: 'linear' }).onfinish = () => l.remove();
+}, 2500);
+
+addEventListener('resize', () => { x = clamp(x, 100, innerWidth - 100); });
+
+setTimeout(() => say('Salut ! Moi c\'est Coco ! 🐒', 2500), 600);
+</script>
+</body>
+</html>
