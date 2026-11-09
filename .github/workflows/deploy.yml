@@ -58,3 +58,16 @@ jobs:
             docker rm -f webapp 2>/dev/null || true
             docker run -d --name webapp --restart unless-stopped -p 80:5000 $IMAGE:${{ github.sha }}
           "
+
+      - name: Test de santé
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS --max-time 5 "http://${{ secrets.SSH_HOST }}/health" | grep -q '"status":"ok"'; then
+              echo "Application en bonne santé"
+              exit 0
+            fi
+            echo "Tentative $i/10 : pas de réponse, nouvel essai dans 5 s"
+            sleep 5
+          done
+          echo "::error::L'application ne répond pas sur /health"
+          exit 1
