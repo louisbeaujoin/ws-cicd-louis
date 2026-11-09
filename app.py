@@ -21,6 +21,12 @@ def index():
     return response
 
 
+@app.route("/gateau")
+def gateau():
+    # Jeu original "La pâtisserie de Coco" (fichier autonome dans static/gateau.html)
+    return app.send_static_file("gateau.html")
+
+
 @app.route("/health")
 def health():
     return jsonify(status="ok", version=VERSION)
