@@ -176,6 +176,22 @@ Avec une **Standard_B1s** (taille prévue par le TP), le coût serait d'environ 
 
 **Suivi du crédit Azure for Students :** dans le portail, *Abonnements* > *Azure for Students* > *Vue d'ensemble*, ou *Gestion des coûts + facturation* > *Crédits Azure*, ou encore https://www.microsoftazuresponsorships.com/balance. On peut aussi passer par le *hub Éducation* (https://portal.azure.com/#view/Microsoft_Azure_Education/EducationMenuBlade/~/overview). Créer un **budget avec alerte** dans *Gestion des coûts* est recommandé.
 
+### 7.4 Bonus : connexion à PostgreSQL (`cezidb`)
+
+- **Serveur :** Azure Database for PostgreSQL – serveur flexible `cezidb` (PostgreSQL 18, Standard_B1ms, groupe `cesizen`), réutilisé du TP précédent. Base `louisdb`, utilisateur `louis`.
+- **Pare-feu :** la règle `allow-vm-app` autorise uniquement l'IP publique de la VM (`9.205.249.132`). Depuis un autre poste, la connexion expire (vérifié).
+- **Application :** nouvelle page `/db` dans `app.py`. Elle lit `DB_HOST`, `DB_NAME`, `DB_USER` et `DB_PASSWORD` dans les variables d'environnement et se connecte avec `psycopg` 3 en **SSL obligatoire** (`sslmode=require`). Elle renvoie en JSON : base, utilisateur, version de PostgreSQL, heure du serveur, nombre de tables. En cas d'erreur, elle renvoie un message explicite et un code 500, sans jamais le mot de passe.
+- **Secrets GitHub :** `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
+- **Transmission au conteneur :** l'étape « Transmettre la configuration base de données » écrit les secrets dans `~/webapp.env` sur la VM (`umask 077`, soit `-rw-------`, lisible par `azureuser` seulement). Le contenu est envoyé par l'entrée standard de SSH, puis le conteneur est lancé avec `--env-file ~/webapp.env`. Le mot de passe n'apparaît ainsi ni dans les journaux GitHub (masqué `***`), ni dans la ligne de commande visible par `ps` sur la VM.
+- **Résultat** (http://9.205.249.132/db) :
+
+```json
+{"status":"ok","serveur":"cezidb.postgres.database.azure.com","base":"louisdb","utilisateur":"louis",
+ "postgres":"PostgreSQL 18.6 on x86_64-pc-linux-gnu","tables_utilisateur":0,"version_app":"ddc6370"}
+```
+
+- **Limites et améliorations :** `docker inspect webapp` sur la VM affiche toujours les variables, donc toute personne du groupe `docker` peut lire le mot de passe. On utilise ici le compte **administrateur** du serveur, alors qu'il faudrait un utilisateur dédié avec des droits minimaux sur `louisdb`. Mieux encore : **Azure Key Vault**, ou l'authentification **Microsoft Entra ID** avec une **identité managée** de la VM, qui supprime tout mot de passe ; on peut aussi utiliser un **accès privé** (intégration VNet ou Private Endpoint) pour que la base ne soit plus exposée sur Internet.
+
 ### 7.5 Nettoyage (adapté à la réutilisation de `tpazure`)
 
 On **ne supprime pas** le groupe `cesizen`, qui contient la VM et `cezidb` du TP précédent. Le nettoyage du workshop consiste à :
