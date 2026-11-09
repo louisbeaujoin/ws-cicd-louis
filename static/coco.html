@@ -276,6 +276,34 @@ body.night #monkey{filter:brightness(.8)}
   15%{opacity:1;transform:translate(-50%,-60%) scale(1.15)}
   100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% - 120px)) scale(.9) rotate(var(--rot))}}
 
+/* ================= CACATOV ================= */
+body.armed,body.armed #scene,body.armed .canopy{cursor:crosshair}
+.cacatov{position:absolute;left:0;top:0;z-index:25;pointer-events:none;font-size:38px;line-height:1;
+  filter:drop-shadow(0 4px 3px rgba(0,0,0,.35));will-change:transform}
+.cacatov .fuse{position:absolute;left:50%;top:-20px;margin-left:-8px;font-size:20px;animation:flicker .12s infinite alternate}
+@keyframes flicker{to{transform:scale(1.25) rotate(8deg);opacity:.75}}
+.splat{position:absolute;z-index:4;pointer-events:none;width:70px;height:24px;margin:-12px 0 0 -35px;border-radius:50%;
+  background:radial-gradient(ellipse at 45% 40%,#8a5a2b,#5b3714 60%,#3e250c);
+  box-shadow:-34px -6px 0 -6px #5b3714,36px -4px 0 -7px #5b3714,-18px -16px 0 -8px #6d4419,22px -18px 0 -9px #6d4419;
+  animation:splatIn .25s cubic-bezier(.3,1.6,.5,1)}
+.splat.fade{transition:opacity 1.5s;opacity:0}
+@keyframes splatIn{from{transform:scale(.2,1.8)}to{transform:none}}
+#monkey{position:relative}
+.stain{position:absolute;z-index:2;pointer-events:none;width:30px;height:22px;margin:-11px 0 0 -15px;border-radius:50% 45% 55% 50%;
+  background:radial-gradient(circle at 40% 35%,#8a5a2b,#4a2c0f 70%);opacity:.92;
+  box-shadow:-12px 6px 0 -7px #4a2c0f,13px 9px 0 -8px #4a2c0f;animation:splatIn .25s}
+.stink{position:absolute;z-index:21;pointer-events:none;font-size:22px;color:#7cb342;font-weight:900;
+  transform:translate(-50%,-50%);animation:floatUp 1.6s ease-out forwards}
+#monkey.yuck{animation:shake .1s linear infinite}
+#monkey.yuck .skin{fill:#b9d98a}
+#monkey.yuck .skinDark{fill:#9cc46a}
+#monkey.yuck .armL{animation:none;transform:rotate(150deg)}
+#monkey.yuck .armR{animation:none;transform:rotate(-150deg)}
+#monkey.yuck .m-smile{display:none}
+#monkey.yuck .m-frown{display:inline}
+.buttons button.poop{background:#a86b32;color:#fff;box-shadow:0 3px 0 #6d4419}
+.buttons button.poop.on{background:#e53935;box-shadow:0 3px 0 #9a1f1c;animation:flicker .3s infinite alternate}
+
 /* ================= INTERFACE ================= */
 .ui{position:absolute;z-index:30;cursor:default}
 .panel{top:16px;left:16px;width:240px;padding:16px;border-radius:20px;
@@ -402,6 +430,7 @@ body.night .panel{background:rgba(20,28,60,.7);color:#eef}
   <div class="stat"><span>Bonheur</span><span id="moodEmoji">😊</span></div>
   <div class="bar"><div id="happyBar"></div></div>
   <div class="stat"><span>🍌 Bananes mangées</span><b id="eaten">0</b></div>
+  <div class="stat"><span>💩 Cacatovs reçus</span><b id="hits">0</b></div>
   <div class="buttons">
     <button data-a="feed">🍌 Nourrir</button>
     <button data-a="dance">💃 Danser</button>
@@ -409,11 +438,14 @@ body.night .panel{background:rgba(20,28,60,.7);color:#eef}
     <button data-a="flip">🤸 Salto</button>
     <button data-a="night" id="nightBtn">🌙 Nuit</button>
     <button data-a="sound" id="soundBtn">🔊 Son</button>
+    <button data-a="poop" id="poopBtn" class="poop">💩 Cacatov</button>
+    <button data-a="wash">🚿 Laver</button>
   </div>
 </div>
 <div class="ui help">
   Clique dans le décor = banane 🍌 • Frotte son ventre = chatouilles • Tape sa tête (5× = colère 😡) • Clique sa queue •
-  Clique un arbre = noix de coco 🥥 • Double-clic = salto • ← → pour bouger, Espace = saut, D = danse
+  Clique un arbre = noix de coco 🥥 • Double-clic = salto • ← → pour bouger, Espace = saut, D = danse •
+  💩 Cacatov armé = clique pour lancer (C = tir direct sur Coco)
 </div>
 
 <script>
@@ -443,7 +475,8 @@ let busyUntil = 0, sleeping = false, night = false, soundOn = true;
 let lastAct = Date.now();
 let mx = innerWidth / 2, my = innerHeight / 2;
 const bananas = [], keys = {}, timers = {};
-const EXCL = ['jump','flip','dance','tickle','angry','dizzy','eat','yawn','poked','wave','scratch','look','earwiggle','tailspin'];
+const EXCL = ['jump','flip','dance','tickle','angry','dizzy','eat','yawn','poked','wave','scratch','look','earwiggle','tailspin','yuck'];
+let armed = false, hits = 0;
 
 const isBusy = () => now() < busyUntil;
 const happy = d => happiness = clamp(happiness + d, 0, 100);
@@ -513,7 +546,10 @@ const sfx = {
   snore() { tone(90, 60, .9, 'sawtooth', .025); },
   whoosh(){ tone(300, 1400, .3, 'sine', .08); },
   plop()  { tone(500, 250, .12, 'triangle', .08); },
-  yawn()  { tone(380, 160, 1.2, 'sine', .08); }
+  yawn()  { tone(380, 160, 1.2, 'sine', .08); },
+  throw() { tone(900, 200, .45, 'sawtooth', .04); tone(1800, 600, .3, 'sine', .03); },
+  splat() { tone(260, 40, .35, 'sawtooth', .22); tone(120, 30, .4, 'square', .12, .02); tone(600, 90, .2, 'triangle', .08, .05); },
+  yuck()  { tone(300, 140, .5, 'sawtooth', .1); tone(310, 150, .5, 'sawtooth', .06, .08); }
 };
 
 let danceTimer = null;
@@ -733,9 +769,124 @@ function toggleNight() {
   else say('Bonjour soleil ! ☀️');
 }
 
+/* ===================== CACATOV 💩🔥 ===================== */
+function toggleArmed(force) {
+  armed = force ?? !armed;
+  document.body.classList.toggle('armed', armed);
+  const b = document.getElementById('poopBtn');
+  b.classList.toggle('on', armed);
+  b.textContent = armed ? '🎯 Armé !' : '💩 Cacatov';
+  if (armed && !sleeping && !isBusy()) say(pick(['Euh... tu fais quoi là ? 😰', 'Pose ça tout de suite ! 😨', 'Non non non... 🙈']));
+}
+
+function throwCacatov(tx, ty) {
+  lastAct = Date.now();
+  // lancé depuis le bas de l'écran, du côté opposé à la cible
+  const x0 = tx < innerWidth / 2 ? innerWidth * .92 : innerWidth * .08;
+  const y0 = innerHeight + 30;
+  const peak = Math.max(160, (y0 - Math.min(ty, y0)) * .5 + 140);
+  const dur = 650 + Math.abs(tx - x0) * .35;
+  const el = document.createElement('div');
+  el.className = 'cacatov';
+  el.innerHTML = '💩<span class="fuse">🔥</span>';
+  scene.appendChild(el);
+  sfx.throw();
+
+  // Coco voit le projectile arriver et tente parfois d'esquiver
+  if (!sleeping && !isBusy() && Math.abs(tx - x) < 140 && Math.random() < .3)
+    setTimeout(() => { if (!isBusy()) { doJump(false); say('Raté ! 😜'); } }, dur * .55);
+
+  const start = now(), spin = rand(540, 900) * (tx > x0 ? 1 : -1);
+  (function fly() {
+    const k = Math.min(1, (now() - start) / dur);
+    const px = x0 + (tx - x0) * k;
+    const py = y0 + (ty - y0) * k - 4 * peak * k * (1 - k);
+    el.style.transform = `translate(${px - 19}px, ${py - 19}px) rotate(${spin * k}deg)`;
+    if (k < 1) return requestAnimationFrame(fly);
+    el.remove();
+    land(tx, ty);
+  })();
+}
+
+function land(px, py) {
+  sfx.splat();
+  for (let i = 0; i < 3; i++) particle(pick(['🔥', '💥']), px + rand(-30, 30), py + rand(-20, 10));
+  const r = monkey.getBoundingClientRect();
+  const onMonkey = px > r.left + 25 && px < r.right - 25 && py > r.top + 10 && py < r.bottom - 5;
+  if (onMonkey) return hitMonkey(px, py, r);
+  if (Math.abs(px - x) < 160 && !sleeping && !isBusy() && Math.random() < .6)
+    say(pick(['Hé ho ! Ça va pas ?! 😠', 'Raté, nananère ! 😝', 'Beurk, ça pue ici ! 🤢']));
+  // éclaboussure au sol (ou sur le décor) qui disparaît
+  const s = document.createElement('div');
+  s.className = 'splat';
+  s.style.left = px + 'px';
+  s.style.top = Math.min(py, innerHeight - 70) + 'px';
+  scene.appendChild(s);
+  setTimeout(() => s.classList.add('fade'), 7000);
+  setTimeout(() => s.remove(), 8600);
+}
+
+function hitMonkey(px, py, r) {
+  hits++;
+  document.getElementById('hits').textContent = hits;
+  if (sleeping) { sleeping = false; monkey.classList.remove('sleep'); }
+  act('yuck', 2400);
+  sfx.yuck();
+  say(pick(['BEURK !!! 🤮', 'Mais ça pue !! 🤢', 'QUI A FAIT ÇA ?! 😡', 'Pouah ! Dans mes poils ! 😭', 'Ça brûle ET ça pue !! 🔥💩']), 2300);
+  happy(-10);
+  // tache collée sur Coco (en coordonnées locales, compatible retournement)
+  if (monkey.querySelectorAll('.stain').length < 14) {
+    let lx = clamp((px - r.left) / r.width, .2, .8);
+    const ly = clamp((py - r.top) / r.height, .12, .9);
+    if (facing === 1) lx = 1 - lx;           // le flipper est en scaleX(-1)
+    const st = document.createElement('div');
+    st.className = 'stain';
+    st.style.left = lx * 100 + '%';
+    st.style.top = ly * 100 + '%';
+    st.style.transform = `rotate(${rand(0, 360)}deg) scale(${rand(.8, 1.3)})`;
+    monkey.appendChild(st);
+  }
+  for (let i = 0; i < 5; i++)
+    setTimeout(() => particle(pick(['🤢', '💢', '〰️', '🪰']), px + rand(-60, 60), py - rand(10, 60)), i * 160);
+  // après le choc, la colère
+  setTimeout(() => { if (!sleeping && !isBusy() && Math.random() < .5) { act('angry', 1600); sfx.angry(); say('Tu vas me le payer ! 😤'); } }, 2500);
+}
+
+function wash() {
+  const stains = monkey.querySelectorAll('.stain');
+  if (!stains.length) return say('Je suis déjà tout propre ! ✨');
+  stains.forEach(s => s.remove());
+  act('tickle', 1500);
+  sfx.laugh();
+  say('Ahhh, tout propre ! 🛁', 2000);
+  happy(8);
+  const h = headPos();
+  for (let i = 0; i < 8; i++) setTimeout(() => particle(pick(['🫧', '💧', '✨']), h.x + rand(-80, 80), h.y + rand(-20, 120)), i * 110);
+}
+
+// odeur et mouches quand Coco est sale
+setInterval(() => {
+  const n = monkey.querySelectorAll('.stain').length;
+  if (!n) return;
+  const r = monkey.getBoundingClientRect();
+  for (let i = 0; i < Math.min(3, Math.ceil(n / 3)); i++) {
+    const p = document.createElement('div');
+    p.className = 'stink';
+    p.textContent = pick(['〰️', '🪰', '~']);
+    p.style.left = r.left + rand(30, r.width - 30) + 'px';
+    p.style.top = r.top + rand(20, r.height * .6) + 'px';
+    p.style.setProperty('--dx', rand(-40, 40) + 'px');
+    p.style.setProperty('--rot', rand(-30, 30) + 'deg');
+    scene.appendChild(p);
+    setTimeout(() => p.remove(), 1700);
+  }
+  if (!sleeping && !isBusy() && Math.random() < .12) say(pick(['Je pue... 😭', 'Lave-moi ! 🚿', 'Les mouches me suivent ! 🪰']));
+}, 1300);
+
 /* ===================== ÉVÉNEMENTS ===================== */
 scene.addEventListener('pointerdown', e => {
   lastAct = Date.now();
+  if (armed) return throwCacatov(e.clientX, e.clientY);
   const t = e.target;
   if (t.closest('#belly')) return tickle();
   if (t.closest('#tail')) return tailClick();
@@ -760,6 +911,7 @@ belly.addEventListener('pointerleave', () => { lastRub = null; rub = 0; });
 
 const actions = {
   feed, dance: doDance, jump: () => doJump(), flip: doFlip, night: toggleNight,
+  poop: () => toggleArmed(), wash,
   sound() { soundOn = !soundOn; document.getElementById('soundBtn').textContent = soundOn ? '🔊 Son' : '🔇 Muet'; }
 };
 document.querySelectorAll('[data-a]').forEach(b =>
@@ -777,6 +929,8 @@ addEventListener('keydown', e => {
   if (e.key === 'f' || e.key === 'F') doFlip();
   if (e.key === 'b' || e.key === 'B') feed();
   if (e.key === 'n' || e.key === 'N') toggleNight();
+  if (e.key === 'c' || e.key === 'C') { const h = headPos(); throwCacatov(h.x + rand(-25, 25), h.y + rand(-10, 70)); }
+  if (e.key === 'Escape') toggleArmed(false);
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 
