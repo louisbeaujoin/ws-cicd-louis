@@ -50,13 +50,26 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
+      - name: Transmettre la configuration base de données
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          printf 'DB_HOST=%s\nDB_NAME=%s\nDB_USER=%s\nDB_PASSWORD=%s\n' \
+            "$DB_HOST" "$DB_NAME" "$DB_USER" "$DB_PASSWORD" |
+          ssh -i ~/.ssh/id_deploy "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            'umask 077 && cat > ~/webapp.env'
+
       - name: Déployer sur la VM
         run: |
           ssh -i ~/.ssh/id_deploy "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" "
             set -e
             docker pull $IMAGE:${{ github.sha }}
             docker rm -f webapp 2>/dev/null || true
-            docker run -d --name webapp --restart unless-stopped -p 80:5000 $IMAGE:${{ github.sha }}
+            docker run -d --name webapp --restart unless-stopped -p 80:5000 \
+              --env-file ~/webapp.env $IMAGE:${{ github.sha }}
           "
 
       - name: Test de santé
