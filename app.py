@@ -13,11 +13,27 @@ VERSION = os.getenv("APP_VERSION", "dev")
 
 @app.route("/")
 def index():
-    return (
-        f"<h1>{MESSAGE}</h1>"
-        f"<p>Version : <code>{VERSION[:7]}</code></p>"
-        f"<p>Conteneur : <code>{socket.gethostname()}</code></p>"
-    )
+    # Vidéo plein écran : lecture auto, sans son, en boucle, sans contrôles
+    return f"""<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{MESSAGE}</title>
+<style>
+  html, body {{ margin: 0; height: 100%; overflow: hidden; background: #000; }}
+  video {{
+    position: fixed; inset: 0;
+    width: 100vw; height: 100vh; height: 100dvh;
+    object-fit: cover; pointer-events: none;
+  }}
+</style>
+</head>
+<body>
+<!-- Version : {VERSION[:7]} | Conteneur : {socket.gethostname()} -->
+<video src="/static/gorille.mp4" autoplay muted loop playsinline disablepictureinpicture></video>
+</body>
+</html>"""
 
 
 @app.route("/health")
